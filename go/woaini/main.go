@@ -18,6 +18,7 @@ func main() {
 		"Love is not about possession, it's about appreciation.",
 		"There is no right or wrong in love, only the truth of your heart.",
 		"These are things that trancend the boundaries of species.",
+		"Love is not about finding the right creature, but creating the right relationship.",
 	}
 
 	// Print a random statement from the slice
