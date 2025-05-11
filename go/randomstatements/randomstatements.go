@@ -39,7 +39,7 @@ func randomStatement() string {
 func printRandomStatement() {
 	for {
 		fmt.Println(randomStatement())
-		time.Sleep(2 * time.Second) // Wait for 2 seconds before printing the next statement
+		time.Sleep(0.5 * time.Second) // Wait for 2 seconds before printing the next statement
 	}
 }
 
