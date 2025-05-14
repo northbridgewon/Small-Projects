@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom styles if needed, or to ensure Inter font loads */
+        body {
+            font-family: 'Inter', sans-serif; /* Tailwind's default sans-serif is often Inter */
+        }
+        /* Style for completed tasks */
+        .completed {
+            text-decoration: line-through;
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+        /* Simple animation for adding tasks */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .task-item {
+            animation: fadeIn 0.3s ease-out;
+        }
+        /* Ensuring consistent button styling and touch targets */
+        .btn {
+            @apply py-2 px-4 rounded-lg shadow-md transition-transform transform active:scale-95;
+        }
+        .icon-btn {
+             @apply p-2 rounded-md transition-colors;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-700 min-h-screen flex items-center justify-center p-4 selection:bg-sky-400 selection:text-white">
+
+    <div class="bg-slate-800 shadow-2xl rounded-xl p-6 md:p-8 w-full max-w-lg text-gray-100">
+        <h1 class="text-3xl md:text-4xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-cyan-300">My To-Do List</h1>
+
+        <form id="taskForm" class="flex gap-3 mb-6">
+            <input
+                type="text"
+                id="taskInput"
+                placeholder="Add a new task..."
+                aria-label="New task"
+                class="flex-grow p-3 border border-slate-600 rounded-lg bg-slate-700 text-gray-200 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none placeholder-slate-500"
+            >
+            <button
+                type="submit"
+                class="btn bg-sky-500 hover:bg-sky-600 text-white font-semibold"
+                aria-label="Add task"
+            >
+                <i class="fas fa-plus mr-1 hidden sm:inline"></i> Add
+            </button>
+        </form>
+
+        <ul id="taskList" class="space-y-3">
+            </ul>
+
+        <p id="emptyMessage" class="text-center text-slate-500 mt-8 hidden">No tasks yet. Add some!</p>
+
+        <div class="mt-8 text-center">
+            <button id="clearAllButton" class="btn bg-rose-600 hover:bg-rose-700 text-white text-sm hidden">
+                <i class="fas fa-trash-alt mr-1 hidden sm:inline"></i> Clear All Tasks
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const taskForm = document.getElementById('taskForm');
+        const taskInput = document.getElementById('taskInput');
+        const taskList = document.getElementById('taskList');
+        const emptyMessage = document.getElementById('emptyMessage');
+        const clearAllButton = document.getElementById('clearAllButton');
+        // const taskCountElement = document.getElementById('taskCount'); // For future filter/sort feature
+
+        // --- Application State ---
+        let tasks = []; // Array to store task objects {id: number, text: string, completed: boolean}
+
+        // --- Event Listeners ---
+
+        // Listen for form submission to add a task
+        taskForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent page reload
+            const taskText = taskInput.value.trim(); // Get text and remove whitespace
+
+            if (taskText !== "") {
+                addTask(taskText);
+                taskInput.value = ""; // Clear the input field
+                taskInput.focus(); // Keep focus on input
+            }
+        });
+
+        // Listen for clicks on the task list (for complete/delete)
+        taskList.addEventListener('click', function(event) {
+            const target = event.target; // The element that was clicked
+
+            // Check if a delete button (or its icon) was clicked
+            if (target.closest('.delete-button')) {
+                const taskItem = target.closest('li');
+                const taskId = parseInt(taskItem.dataset.id);
+                deleteTask(taskId);
+            }
+            // Check if a checkbox was clicked
+            else if (target.type === 'checkbox' && target.classList.contains('task-checkbox')) {
+                const taskItem = target.closest('li');
+                const taskId = parseInt(taskItem.dataset.id);
+                toggleComplete(taskId);
+            }
+        });
+
+        // Listen for click on "Clear All Tasks" button
+        clearAllButton.addEventListener('click', function() {
+            if (confirm("Are you sure you want to delete ALL tasks? This cannot be undone.")) {
+                tasks = []; // Clear the array
+                saveTasks();  // Update localStorage
+                renderTasks(); // Re-render the UI
+            }
+        });
+
+
+        // --- Core Functions ---
+
+        /**
+         * Adds a new task to the tasks array and re-renders the list.
+         * @param {string} text - The text content of the task.
+         */
+        function addTask(text) {
+            const newTask = {
+                id: Date.now(), // Unique ID based on timestamp
+                text: text,
+                completed: false
+            };
+            tasks.push(newTask);
+            saveTasks();
+            renderTasks();
+        }
+
+        /**
+         * Deletes a task from the tasks array by its ID and re-renders.
+         * @param {number} taskId - The ID of the task to delete.
+         */
+        function deleteTask(taskId) {
+            tasks = tasks.filter(task => task.id !== taskId);
+            saveTasks();
+            renderTasks();
+        }
+
+        /**
+         * Toggles the 'completed' status of a task by its ID and re-renders.
+         * @param {number} taskId - The ID of the task to toggle.
+         */
+        function toggleComplete(taskId) {
+            tasks = tasks.map(task => {
+                if (task.id === taskId) {
+                    return { ...task, completed: !task.completed };
+                }
+                return task;
+            });
+            saveTasks();
+            renderTasks();
+        }
+
+        /**
+         * Renders all tasks to the DOM.
+         */
+        function renderTasks() {
+            taskList.innerHTML = ''; // Clear the current list
+
+            if (tasks.length === 0) {
+                emptyMessage.classList.remove('hidden');
+                clearAllButton.classList.add('hidden');
+            } else {
+                emptyMessage.classList.add('hidden');
+                clearAllButton.classList.remove('hidden');
+                tasks.forEach(task => {
+                    const taskItem = document.createElement('li');
+                    taskItem.className = `task-item flex items-center justify-between bg-slate-700/80 backdrop-blur-sm p-3 rounded-lg shadow hover:bg-slate-600/70 transition-colors duration-150`;
+                    taskItem.dataset.id = task.id; // Store task ID on the element
+
+                    // Task content container
+                    const taskContent = document.createElement('div');
+                    taskContent.className = 'flex items-center flex-grow mr-2'; // Added flex-grow and mr-2
+
+                    // Checkbox
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = task.completed;
+                    checkbox.className = 'task-checkbox form-checkbox h-5 w-5 text-sky-500 rounded border-slate-500 bg-slate-600 focus:ring-sky-500 mr-3 cursor-pointer flex-shrink-0';
+                    checkbox.setAttribute('aria-label', task.completed ? 'Mark task as incomplete' : 'Mark task as complete');
+
+
+                    // Task text
+                    const taskTextElement = document.createElement('span');
+                    taskTextElement.textContent = task.text;
+                    taskTextElement.className = 'task-text break-all'; // break-all for long words
+                    if (task.completed) {
+                        taskTextElement.classList.add('completed');
+                    }
+
+                    taskContent.appendChild(checkbox);
+                    taskContent.appendChild(taskTextElement);
+
+                    // Delete button
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-button icon-btn text-rose-500 hover:text-rose-400 flex-shrink-0';
+                    deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                    deleteButton.setAttribute('aria-label', `Delete task: ${task.text}`);
+
+
+                    taskItem.appendChild(taskContent);
+                    taskItem.appendChild(deleteButton);
+                    taskList.appendChild(taskItem);
+                });
+            }
+            // updateTaskCount(); // For future filter/sort feature
+        }
+
+        // --- Local Storage Functions ---
+
+        /**
+         * Saves the current tasks array to localStorage.
+         */
+        function saveTasks() {
+            localStorage.setItem('todoTasks', JSON.stringify(tasks));
+        }
+
+        /**
+         * Loads tasks from localStorage when the page loads.
+         */
+        function loadTasks() {
+            const storedTasks = localStorage.getItem('todoTasks');
+            if (storedTasks) {
+                tasks = JSON.parse(storedTasks);
+            }
+            renderTasks(); // Render tasks after loading
+        }
+
+        // --- Utility Functions (for future features) ---
+        /*
+        function updateTaskCount() {
+            const incompleteTasks = tasks.filter(task => !task.completed).length;
+            taskCountElement.textContent = incompleteTasks;
+        }
+        */
+
+        // --- Initial Load ---
+        // Load tasks from localStorage when the script runs
+        loadTasks();
+
+    </script>
+</body>
+</html>
