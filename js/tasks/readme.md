@@ -86,15 +86,3 @@ This HTML file creates a fully interactive to-do list that runs in your browser 
 
 * **Initial Load:**
     * `loadTasks();` is called once when the script first runs. This ensures that any tasks saved from a previous session are loaded and displayed.
-
-
-How to Use This File:
-Save: Save the code as an HTML file (e.g., todo.html).
-Open: Open this HTML file in any modern web browser (like Chrome, Firefox, Edge, Safari).
-Interact:
-Type a task in the input field and click "Add" or press Enter.
-Click the checkbox to mark a task as complete/incomplete.
-Click the trash icon to delete a task.
-Try refreshing the page – your tasks should still be there!
-Click "Clear All Tasks" to remove everything (after confirmation).
-This front-end is a solid foundation. The next step would be to build a back-end API (e.g., with Node.js and Express) so that tasks can be stored on a server instead of just in the browser's localStorage. This would allow tasks to be accessed from different devices or browsers.
