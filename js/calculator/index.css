@@ -1,0 +1,30 @@
+/* style.css */
+
+/* Make the body take up the full viewport height and use flexbox for centering */
+body {
+    margin: 0; /* Remove default browser margins */
+    min-height: 100vh; /* Minimum height of the viewport */
+    display: flex; /* Enable flexbox */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    background-color: #f0f0f0; /* Optional: a light background for the page */
+    font-family: Arial, sans-serif; /* Optional: a default font */
+}
+
+#calculator-container {
+    width: 300px; /* Or any width you prefer for your calculator */
+    height: 450px; /* Or any height you prefer */
+    background-color: #ffffff; /* White background for the calculator box */
+    border: 1px solid #cccccc; /* A light grey border */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* A subtle shadow for a "card" effect */
+    border-radius: 8px; /* Rounded corners for the box */
+    padding: 20px; /* Some space inside the box before you add calculator elements */
+
+    position: absolute; /* Position it relative to its nearest positioned ancestor or the initial containing block */
+    top: 50%; /* Move the top edge of the element to the vertical center of the parent */
+    left: 50%; /* Move the left edge of the element to the horizontal center of the parent */
+    transform: translate(-50%, -50%); /* Shift the element back by half its own width and height */
+    display: flex; /* Enable flexbox for the calculator */
+}
+
+/* You can add more styles here as you build the calculator's internal elements */
