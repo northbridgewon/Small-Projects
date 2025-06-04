@@ -44,7 +44,7 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent // Remember to enable this in the Developer Portal!
+        GatewayIntentBits.MessageContent
     ]
 });
 
