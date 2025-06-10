@@ -14,28 +14,26 @@
     'use strict';
 
 // This file is now the conductor of our bot orchestra!
-
-const fs = require('node:fs'); // Node.js file system module, for reading command files
-const path = require('node:path'); // Node.js path module, for constructing file paths
-const { Client, GatewayIntentBits, Events, Collection } = require('discord.js');
+const fs = require('node:fs'); 
+const path = require('node:path'); 
+const { Client, GatewayIntentBits, Events, Collection, PermissionsBitField } = require('discord.js'); // Added PermissionsBitField
 
 // Load configuration
-// We'll try to load config.json. If it's not there, we'll guide the user.
 let config;
 try {
     const configPath = path.join(__dirname, 'config.json');
-    config = require(configPath); // require() can directly read JSON files
+    config = require(configPath); 
 } catch (error) {
-    console.error("💀 Whoopsie! config.json is missing or malformed.");
+    console.error("💀 Whoopsie! config.json is missing or malformed");
     console.error("Please create a config.json file in the root directory with your BOT_TOKEN.");
     console.error("You can copy config.example.json to config.json and fill in your details.");
-    process.exit(1); // Exit if config is not found
+    process.exit(1); 
 }
 
 const token = config.BOT_TOKEN;
 
 if (!token) {
-    console.error("💔 Major heartbreak! The BOT_TOKEN is missing from your config.json. Can't start without it!");
+    console.error("💔 Major heartbreak! The BOT_TOKEN is missing from your config.json. Can't start without it");
     process.exit(1);
 }
 
@@ -44,25 +42,23 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers // Required for some moderation actions like fetching members
     ]
 });
 
 // Storing our commands
-// We use a discord.js Collection to store commands. It's like an enhanced Map.
 client.commands = new Collection();
 
 // Dynamically load command files
-// This is where the modular magic happens! ✨
-const commandsPath = path.join(__dirname, 'commands'); // Path to the 'commands' directory
+const commandsPath = path.join(__dirname, 'commands'); 
 try {
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); // Get all .js files
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')); 
 
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
-        const command = require(filePath); // Load the command module
+        const command = require(filePath); 
 
-        // Set a new item in the Collection with the key as the command name and the value as the exported module
         if ('name' in command && 'execute' in command) {
             client.commands.set(command.name, command);
             console.log(`✅ Command loaded: ${command.name} from ${file}`);
@@ -73,64 +69,68 @@ try {
 } catch (error) {
     console.error(`🚫 Oh noes! Could not read the commands directory at ${commandsPath}:`, error);
     console.error("Make sure you have a 'commands' folder with your command files in it.");
-    // Depending on how critical commands are, you might want to process.exit(1) here.
 }
 
 
-// ClientReady event - runs once when the bot is ready
+// ClientReady event
 client.once(Events.ClientReady, readyClient => {
-    console.log(`🚀 Logged in as ${readyClient.user.tag}! The modular bot is ready to party!`);
-    readyClient.user.setActivity("managing modular commands");
+    console.log(`🚀 Logged in as ${readyClient.user.tag}! The modular bot with moderation is ready!`);
+    readyClient.user.setActivity("enforcing peace and order");
 });
 
-// MessageCreate event - runs every time a message is created
+// MessageCreate event
 client.on(Events.MessageCreate, async message => {
-    if (message.author.bot) return; // Ignore messages from bots (including ourself!)
+    if (message.author.bot) return; 
+    if (!message.guild) return; // Commands are guild-specific
 
-    const prefix = config.PREFIX || "!"; // Use prefix from config or default to "!"
+    const prefix = config.PREFIX || "!"; 
 
-    if (!message.content.startsWith(prefix)) return; // Only process messages with our prefix
+    if (!message.content.startsWith(prefix)) return; 
 
-    // Parse the command and arguments
     const args = message.content.slice(prefix.length).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
 
     const command = client.commands.get(commandName) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
 
     if (!command) {
-        // Optional: reply if the command doesn't exist
-        await message.reply("Hmm, I don't know that command! 🤔");
         console.log(`Command not found: ${commandName}`);
         return;
     }
 
+    // Check for command permissions (if defined in the command file)
+    if (command.permissions) {
+        if (!message.member.permissions.has(command.permissions)) {
+            return message.reply("🚫 你没有权限使用此命令，亲爱的。(You don't have permission to use this command, dear.)").catch(console.error);
+        }
+        // Also check if the bot has the necessary permissions
+        if (!message.guild.members.me.permissions.has(command.permissions)) {
+             return message.reply("😥 我没有足够的权限来执行此操作。(I don't have enough permissions to perform this action.)").catch(console.error);
+        }
+    }
+    
+
     try {
-        // Execute the command!
-        await command.execute(message, args, client, config); // Pass client and config if commands need them
-        console.log(`Executed command '${command.name}' for ${message.author.tag}`);
+        await command.execute(message, args, client, config); 
+        console.log(`Executed command '${command.name}' for ${message.author.tag} in server ${message.guild.name}`);
     } catch (error) {
         console.error(`💥 Error executing command '${command.name}':`, error);
-        await message.reply('Yikes! There was an error trying to execute that command! 😵‍💫').catch(console.error);
+        await message.reply('Yikes! There was an error trying to execute that command, my dear. My circuits are frazzled! 😵‍💫').catch(console.error);
     }
 });
 
-// Log in to Discord with your client's token
+// Log in to Discord
 client.login(token)
     .catch(error => {
-        console.error("💀 Catastrophic failure to login! Double-check that BOT_TOKEN in config.json.", error);
+        console.error("💀 Catastrophic failure to login! Double-check that BOT_TOKEN in config.json, love.", error);
     });
 
 // Enhanced error handling
 process.on('unhandledRejection', error => {
     console.error('Unhandled promise rejection:', error);
-    // Consider more sophisticated logging or alerting here for a production bot
 });
 
 process.on('uncaughtException', error => {
     console.error('Uncaught exception:', error);
-    // It's often recommended to restart the process on an uncaught exception,
-    // as the application state might be corrupted.
-    // process.exit(1);
 });
 
 console.log("尝试启动机器人... (Attempting to start the bot...)");

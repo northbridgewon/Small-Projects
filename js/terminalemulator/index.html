@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<title>Simple Terminal Emulator</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    background-color: #1e1e1e;
+    color: #cccccc;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#terminal {
+    width: 80%;
+    max-width: 800px;
+    height: 70vh;
+    background-color: #0c0c0c;
+    border: 1px solid #333;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#output {
+    flex-grow: 1;
+    white-space: pre-wrap; /* Preserve whitespace and wrap lines */
+    word-break: break-all; /* Break long words */
+    /* Allow text selection */
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+.output-line {
+    margin-bottom: 5px; /* Add margin to each line */
+}
+
+#input-line {
+    display: flex;
+    align-items: center;
+}
+
+#prompt {
+    margin-right: 5px;
+    color: #00ff00; /* Green prompt */
+}
+
+#command-input {
+    flex-grow: 1;
+    background-color: transparent;
+    border: none;
+    color: #cccccc;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1em;
+    outline: none; /* Remove default outline */
+    caret-color: #00ff00; /* Green cursor */
+    /* Disable default browser autocomplete */
+    autocomplete="off";
+}
+
+/* Optional: Style for disabled input */
+#command-input:disabled {
+    color: #888; /* Dim text color when disabled */
+    caret-color: transparent; /* Hide cursor when disabled */
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => { // Make the event listener async
+    const outputDiv = document.getElementById('output');
+    const commandInput = document.getElementById('command-input');
+    const promptSpan = document.getElementById('prompt');
+
+    const typeSpeed = 30; // Milliseconds per character
+    const echoSpeed = 15; // Milliseconds per character for echoing commands
+
+    // Function to type a line character by character
+    const typeLine = (line, speed = typeSpeed) => {
+        const lineElement = document.createElement('div');
+        lineElement.classList.add('output-line');
+        outputDiv.appendChild(lineElement);
+
+        if (line === "") {
+            // For empty lines, just add the element and scroll
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            let i = 0;
+            function type() {
+                if (i < line.length) {
+                    lineElement.textContent += line.charAt(i);
+                    // Auto-scroll to the bottom as text appears
+                    outputDiv.scrollTop = outputDiv.scrollHeight;
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    resolve(); // Resolve the promise when typing is done
+                }
+            }
+            type();
+        });
+    };
+
+    // Simulate a welcome message with typing effect
+    await typeLine("Welcome to the simple terminal emulator!");
+    await typeLine("Type 'help' for a list of commands.");
+    await typeLine(""); // Add an empty line
+
+    // Simple command processing - now async to wait for typing
+    const processCommand = async (command) => {
+        commandInput.disabled = true; // Disable input while processing
+
+        await typeLine(`${promptSpan.textContent}${command}`, echoSpeed); // Echo the command with typing
+
+        const args = command.trim().split(/\s+/);
+        const baseCommand = args[0].toLowerCase();
+
+        switch (baseCommand) {
+            case 'help':
+                await typeLine("Available commands:");
+                await typeLine("  help - Show this help message");
+                await typeLine("  echo [text] - Display the given text");
+                await typeLine("  clear - Clear the terminal output");
+                await typeLine("  date - Display the current date and time");
+                await typeLine("  whoami - Display the current user");
+                await typeLine("  version - Display the emulator version");
+                break;
+            case 'echo':
+                const echoText = args.slice(1).join(' ');
+                await typeLine(echoText);
+                break;
+            case 'clear':
+                // Clearing is instant, no typing needed for the clear action itself
+                outputDiv.innerHTML = '';
+                break;
+            case 'date':
+                const now = new Date();
+                await typeLine(now.toLocaleString());
+                break;
+            case 'whoami':
+                await typeLine("user"); // Simple placeholder username
+                break;
+            case 'version':
+                await typeLine("Simple Terminal v1.0"); // Simple placeholder version
+                break;
+            case '': // Handle empty command
+                break;
+            default:
+                await typeLine(`Command not found: ${command}`);
+                break;
+        }
+        await typeLine(""); // Add an empty line after command output
+
+        commandInput.disabled = false; // Re-enable input
+        commandInput.focus(); // Focus input again
+    };
+
+    // Handle input on Enter key press
+    commandInput.addEventListener('keypress', async (event) => { // Make the listener async
+        if (event.key === 'Enter' && !commandInput.disabled) { // Check if input is not disabled
+            const command = commandInput.value;
+            commandInput.value = ''; // Clear the input field immediately
+            await processCommand(command); // Wait for the command processing and typing to finish
+        }
+    });
+
+    // Focus input when clicking anywhere on the terminal
+    document.getElementById('terminal').addEventListener('click', () => {
+        commandInput.focus();
+    });
+
+    // Initial focus after welcome message is typed
+    commandInput.focus();
+});
+</script>
+</head>
+<body>
+    <div id="terminal">
+        <div id="output"></div>
+        <div id="input-line">
+            <span id="prompt">> </span>
+            <input type="text" id="command-input" autofocus>
+        </div>
+    </div>
+</body>
+</html>
