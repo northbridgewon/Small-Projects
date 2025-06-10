@@ -2,201 +2,408 @@
 <html lang="en">
 
 <head>
-
-<title>Simple Terminal Emulator</title>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body {
-    background-color: #1e1e1e;
-    color: #cccccc;
-    font-family: 'Courier New', Courier, monospace;
-    margin: 0;
-    padding: 20px;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
-
-#terminal {
-    width: 80%;
-    max-width: 800px;
-    height: 70vh;
-    background-color: #0c0c0c;
-    border: 1px solid #333;
-    padding: 10px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-#output {
-    flex-grow: 1;
-    white-space: pre-wrap; /* Preserve whitespace and wrap lines */
-    word-break: break-all; /* Break long words */
-    /* Allow text selection */
-    user-select: text;
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-}
-
-.output-line {
-    margin-bottom: 5px; /* Add margin to each line */
-}
-
-#input-line {
-    display: flex;
-    align-items: center;
-}
-
-#prompt {
-    margin-right: 5px;
-    color: #00ff00; /* Green prompt */
-}
-
-#command-input {
-    flex-grow: 1;
-    background-color: transparent;
-    border: none;
-    color: #cccccc;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1em;
-    outline: none; /* Remove default outline */
-    caret-color: #00ff00; /* Green cursor */
-    /* Disable default browser autocomplete */
-    autocomplete="off";
-}
-
-/* Optional: Style for disabled input */
-#command-input:disabled {
-    color: #888; /* Dim text color when disabled */
-    caret-color: transparent; /* Hide cursor when disabled */
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', async () => { // Make the event listener async
-    const outputDiv = document.getElementById('output');
-    const commandInput = document.getElementById('command-input');
-    const promptSpan = document.getElementById('prompt');
-
-    const typeSpeed = 30; // Milliseconds per character
-    const echoSpeed = 15; // Milliseconds per character for echoing commands
-
-    // Function to type a line character by character
-    const typeLine = (line, speed = typeSpeed) => {
-        const lineElement = document.createElement('div');
-        lineElement.classList.add('output-line');
-        outputDiv.appendChild(lineElement);
-
-        if (line === "") {
-            // For empty lines, just add the element and scroll
-            outputDiv.scrollTop = outputDiv.scrollHeight;
-            return Promise.resolve();
+    <title>webShell</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background: #1a1b26;
+            --foreground: #c0caf5;
+            --prompt: #7aa2f7;
+            --cursor: #7aa2f7;
+            --border: #414868;
+            --shadow: rgba(0, 0, 0, 0.5);
         }
 
-        return new Promise(resolve => {
-            let i = 0;
-            function type() {
-                if (i < line.length) {
-                    lineElement.textContent += line.charAt(i);
-                    // Auto-scroll to the bottom as text appears
-                    outputDiv.scrollTop = outputDiv.scrollHeight;
-                    i++;
-                    setTimeout(type, speed);
-                } else {
-                    resolve(); // Resolve the promise when typing is done
-                }
+        body {
+            background-color: var(--background);
+            color: var(--foreground);
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Prevent scrollbars from body animation */
+        }
+
+        @keyframes floatAnimation {
+            0% {
+                transform: translateY(0px);
+                box-shadow: 0 10px 30px var(--shadow);
             }
-            type();
-        });
-    };
-
-    // Simulate a welcome message with typing effect
-    await typeLine("Welcome to the simple terminal emulator!");
-    await typeLine("Type 'help' for a list of commands.");
-    await typeLine(""); // Add an empty line
-
-    // Simple command processing - now async to wait for typing
-    const processCommand = async (command) => {
-        commandInput.disabled = true; // Disable input while processing
-
-        await typeLine(`${promptSpan.textContent}${command}`, echoSpeed); // Echo the command with typing
-
-        const args = command.trim().split(/\s+/);
-        const baseCommand = args[0].toLowerCase();
-
-        switch (baseCommand) {
-            case 'help':
-                await typeLine("Available commands:");
-                await typeLine("  help - Show this help message");
-                await typeLine("  echo [text] - Display the given text");
-                await typeLine("  clear - Clear the terminal output");
-                await typeLine("  date - Display the current date and time");
-                await typeLine("  whoami - Display the current user");
-                await typeLine("  version - Display the emulator version");
-                break;
-            case 'echo':
-                const echoText = args.slice(1).join(' ');
-                await typeLine(echoText);
-                break;
-            case 'clear':
-                // Clearing is instant, no typing needed for the clear action itself
-                outputDiv.innerHTML = '';
-                break;
-            case 'date':
-                const now = new Date();
-                await typeLine(now.toLocaleString());
-                break;
-            case 'whoami':
-                await typeLine("user"); // Simple placeholder username
-                break;
-            case 'version':
-                await typeLine("Simple Terminal v1.0"); // Simple placeholder version
-                break;
-            case '': // Handle empty command
-                break;
-            default:
-                await typeLine(`Command not found: ${command}`);
-                break;
+            50% {
+                transform: translateY(-15px);
+                box-shadow: 0 25px 40px var(--shadow);
+            }
+            100% {
+                transform: translateY(0px);
+                box-shadow: 0 10px 30px var(--shadow);
+            }
         }
-        await typeLine(""); // Add an empty line after command output
 
-        commandInput.disabled = false; // Re-enable input
-        commandInput.focus(); // Focus input again
-    };
-
-    // Handle input on Enter key press
-    commandInput.addEventListener('keypress', async (event) => { // Make the listener async
-        if (event.key === 'Enter' && !commandInput.disabled) { // Check if input is not disabled
-            const command = commandInput.value;
-            commandInput.value = ''; // Clear the input field immediately
-            await processCommand(command); // Wait for the command processing and typing to finish
+        #terminal {
+            width: 90%;
+            max-width: 900px;
+            height: 80vh;
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            animation: floatAnimation 8s ease-in-out infinite;
+            scroll-behavior: smooth;
         }
-    });
 
-    // Focus input when clicking anywhere on the terminal
-    document.getElementById('terminal').addEventListener('click', () => {
-        commandInput.focus();
-    });
+        #terminal::-webkit-scrollbar { width: 8px; }
+        #terminal::-webkit-scrollbar-track { background: var(--background); }
+        #terminal::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 4px; }
 
-    // Initial focus after welcome message is typed
-    commandInput.focus();
-});
-</script>
+        #output {
+            flex-grow: 1;
+            white-space: pre-wrap;
+            word-break: break-all;
+            user-select: text;
+        }
+
+        .output-line { margin-bottom: 2px; line-height: 1.5; }
+        .ascii-art { color: var(--prompt); font-weight: bold; }
+        .prompt-line { color: var(--prompt); }
+        .error-line { color: #f7768e; }
+        .info-line { color: #e0af68; }
+        .success-line { color: #9ece6a; }
+        .file-line { color: #7dcfff; }
+
+        #input-container { display: flex; align-items: center; }
+        #prompt { margin-right: 8px; color: var(--prompt); font-weight: bold; }
+
+        #command-input {
+            flex-grow: 1;
+            background-color: transparent;
+            border: none;
+            color: var(--foreground);
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 1em;
+            outline: none;
+            caret-color: var(--cursor);
+            autocomplete: "off";
+        }
+        
+        #editor-container { display: none; flex-direction: column; flex-grow: 1; }
+        
+        #editor {
+            flex-grow: 1;
+            background-color: rgba(0,0,0,0.2);
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+            color: var(--foreground);
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 1em;
+            outline: none;
+            resize: none;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        #editor-info { font-size: 0.9em; color: var(--info-line); }
+
+    </style>
 </head>
+
 <body>
     <div id="terminal">
         <div id="output"></div>
-        <div id="input-line">
-            <span id="prompt">> </span>
+        <div id="editor-container">
+            <textarea id="editor"></textarea>
+            <div id="editor-info">Press Ctrl+S to save and exit, or Ctrl+Q to exit without saving.</div>
+        </div>
+        <div id="input-container">
+            <span id="prompt">root@webshell:~$</span>
             <input type="text" id="command-input" autofocus>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const outputDiv = document.getElementById('output');
+            const commandInput = document.getElementById('command-input');
+            const terminalDiv = document.getElementById('terminal');
+            const promptSpan = document.getElementById('prompt');
+            const inputContainer = document.getElementById('input-container');
+            const editorContainer = document.getElementById('editor-container');
+            const editor = document.getElementById('editor');
+            
+            const storagePrefix = 'gemini_terminal_file_';
+            let isEditing = false;
+            let currentFile = '';
+            let commandHistory = [];
+            let historyIndex = -1;
+
+            // --- Utility Functions ---
+            const scrollToBottom = () => terminalDiv.scrollTop = terminalDiv.scrollHeight;
+
+            const renderLine = (htmlContent, className = 'output-line') => {
+                 const lineElement = document.createElement('div');
+                 lineElement.className = className;
+                 lineElement.innerHTML = htmlContent;
+                 outputDiv.appendChild(lineElement);
+                 scrollToBottom();
+            };
+
+            const typeLine = (line, speed = 15, className = 'output-line') => {
+                return new Promise(resolve => {
+                    const lineElement = document.createElement('div');
+                    lineElement.className = className;
+                    outputDiv.appendChild(lineElement);
+                    if (line === "") { scrollToBottom(); resolve(); return; }
+                    let i = 0;
+                    const type = () => {
+                        if (i < line.length) {
+                            lineElement.textContent += line.charAt(i);
+                            scrollToBottom();
+                            i++;
+                            setTimeout(type, speed);
+                        } else { resolve(); }
+                    };
+                    type();
+                });
+            };
+
+            // --- Editor Mode ---
+            const enterEditor = (filename) => {
+                isEditing = true;
+                currentFile = filename;
+                inputContainer.style.display = 'none';
+                editorContainer.style.display = 'flex';
+                editor.value = localStorage.getItem(storagePrefix + filename) || '';
+                editor.focus();
+            };
+
+            const exitEditor = (save = false) => {
+                if (save) {
+                    localStorage.setItem(storagePrefix + currentFile, editor.value);
+                    renderLine(`File saved: <span class="file-line">${currentFile}</span>`, 'success-line');
+                }
+                isEditing = false;
+                currentFile = '';
+                editor.value = '';
+                editorContainer.style.display = 'none';
+                inputContainer.style.display = 'flex';
+                renderLine(''); // Add a blank line for separation
+
+                // BUG FIX: The command input was left disabled after the 'edit' command ran.
+                // We must explicitly re-enable it before trying to focus it.
+                commandInput.disabled = false;
+                
+                setTimeout(() => {
+                    commandInput.focus();
+                }, 0);
+            };
+
+
+            // --- Command Definitions ---
+            const commands = {
+                help: async () => {
+                    await typeLine("Web Shell v2.7 - Command List", 15, 'info-line');
+                    const helpText = [
+                        "  --- System ---",
+                        "  help                   - Display this help message.",
+                        "  clear                  - Clear the terminal screen.",
+                        "  motd                   - Display the message of the day.",
+                        "  date                   - Show the current date and time.",
+                        "  whoami                 - Display the current user.",
+                        "  version                - Show the emulator version info.",
+                        "  repo                   - Display the project repository link.",
+                        "  --- Filesystem ---",
+                        "  ls                     - List all saved files.",
+                        "  edit [filename]        - Create or edit a text file.",
+                        "  cat [filename]         - Display the content of a file.",
+                        "  rm [filename]          - Delete a file.",
+                        "  --- Utilities ---",
+                        "  calc [expression]      - Evaluate a mathematical expression.",
+                        "  ping [host]            - Measure latency to a host."
+                    ];
+                    for (const line of helpText) { await typeLine(line, 5); }
+                },
+                edit: async (args) => {
+                    const filename = args[0];
+                    if (!filename) {
+                        await typeLine("Usage: edit <filename>", 15, 'error-line');
+                        return;
+                    }
+                    await typeLine(`Opening editor for ${filename}...`);
+                    enterEditor(filename);
+                },
+                ls: async () => {
+                    let filesFound = false;
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key.startsWith(storagePrefix)) {
+                            await typeLine(key.replace(storagePrefix, ''), 10, 'file-line');
+                            filesFound = true;
+                        }
+                    }
+                    if (!filesFound) {
+                        await typeLine("No files found.", 15, 'info-line');
+                    }
+                },
+                cat: async (args) => {
+                    const filename = args[0];
+                    if (!filename) {
+                        await typeLine("Usage: cat <filename>", 15, 'error-line');
+                        return;
+                    }
+                    const content = localStorage.getItem(storagePrefix + filename);
+                    if (content !== null) {
+                        renderLine(content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+                    } else {
+                        await typeLine(`File not found: ${filename}`, 15, 'error-line');
+                    }
+                },
+                rm: async (args) => {
+                    const filename = args[0];
+                    if (!filename) {
+                        await typeLine("Usage: rm <filename>", 15, 'error-line');
+                        return;
+                    }
+                    if (localStorage.getItem(storagePrefix + filename) !== null) {
+                        localStorage.removeItem(storagePrefix + filename);
+                        await typeLine(`File deleted: ${filename}`, 15, 'success-line');
+                    } else {
+                        await typeLine(`File not found: ${filename}`, 15, 'error-line');
+                    }
+                },
+                motd: async () => {
+                    const art = [
+                        '       .__           .__  .__   ',
+                        '  ____ |  |__   ____ |  | |  |  ',
+                        '_/ ___\\|  |  \\_/ __ \\|  | |  |  ',
+                        '\\  \\___|   Y  \\  ___/|  |_|  |__',
+                        ' \\___  >___|  /\\___  >____/____/',
+                        '     \\/     \\/     \\/           '
+                    ];
+                    for (const line of art) { await typeLine(line, 5, 'ascii-art'); }
+                    await typeLine("\nWelcome to \"chell\", the web terminal.", 15, 'info-line');
+                },
+                calc: async (args) => {
+                    const expression = args.join(' ');
+                    if (!expression) { await typeLine("Usage: calc <expression>", 15, 'error-line'); return; }
+                    try {
+                        const result = new Function('return ' + expression)();
+                        await typeLine(result.toString(), 15, 'success-line');
+                    } catch (e) { await typeLine(`Invalid expression: ${e.message}`, 15, 'error-line'); }
+                },
+                ping: async (args) => {
+                    const host = args[0];
+                    if (!host) { await typeLine("Usage: ping <host>", 15, 'error-line'); return; }
+                    const url = host.startsWith('http') ? host : `https://${host}`;
+                    await typeLine(`Pinging ${host} via HTTP...`);
+                    for (let i = 0; i < 4; i++) {
+                        const s = performance.now();
+                        try {
+                            await fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-cache' });
+                            const time = Math.round(performance.now() - s);
+                            await typeLine(`Reply from ${host}: time=${time}ms`, 10, 'success-line');
+                        } catch (e) { await typeLine(`Request to ${host} failed.`, 10, 'error-line'); break; }
+                        if (i < 3) await new Promise(r => setTimeout(r, 1000));
+                    }
+                },
+                echo: async (args) => { await typeLine(args.join(' ')); },
+                clear: () => { outputDiv.innerHTML = ''; return Promise.resolve(); },
+                date: async () => { await typeLine(new Date().toLocaleString()); },
+                whoami: async () => { await typeLine("root"); },
+                version: async () => { await typeLine("Web Shell v2.7  "); },
+                repo: async () => { renderLine('Find the code repository here: <a href="https://github.com/northbridgewon/Small-Projects/tree/main/js/terminalemulator" target="_blank" style="color: #7dcfff;">Project Repo</a>'); }
+            };
+
+
+            // --- Core Logic ---
+            const processCommand = async (commandStr) => {
+                commandInput.disabled = true;
+                renderLine(`<span class="prompt-line">${promptSpan.textContent}</span> ${commandStr.replace(/</g, "&lt;").replace(/>/g, "&gt;")}`);
+
+                if (commandStr.trim() !== "") {
+                    commandHistory.unshift(commandStr);
+                    if (commandHistory.length > 50) { commandHistory.pop(); }
+                }
+                historyIndex = -1;
+
+                const parts = commandStr.trim().split(/\s+/);
+                const baseCommand = parts[0].toLowerCase();
+                const args = parts.slice(1);
+
+                if (baseCommand in commands) {
+                    await commands[baseCommand](args);
+                } else if (baseCommand !== "") {
+                    await typeLine(`Command not found: ${baseCommand}`, 15, 'error-line');
+                }
+                
+                // This block is correctly skipped when entering the editor
+                if (!isEditing) {
+                    await typeLine("");
+                    commandInput.disabled = false;
+                    commandInput.focus();
+                }
+            };
+
+            // --- Event Listeners ---
+            document.addEventListener('keydown', async (event) => {
+                if (isEditing) {
+                    if (event.ctrlKey && event.key === 's') {
+                        event.preventDefault();
+                        exitEditor(true);
+                    } else if (event.ctrlKey && event.key === 'q') {
+                        event.preventDefault();
+                        exitEditor(false);
+                    }
+                    return;
+                }
+
+                if (event.target === commandInput) {
+                     if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const command = commandInput.value;
+                        commandInput.value = '';
+                        await processCommand(command);
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        if (historyIndex < commandHistory.length - 1) {
+                            historyIndex++;
+                            commandInput.value = commandHistory[historyIndex];
+                        }
+                    } else if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        if (historyIndex > 0) {
+                            historyIndex--;
+                            commandInput.value = commandHistory[historyIndex];
+                        } else {
+                            historyIndex = -1;
+                            commandInput.value = '';
+                        }
+                    }
+                }
+            });
+
+            terminalDiv.addEventListener('click', (e) => {
+                if (!isEditing && e.target.id !== 'editor') {
+                    commandInput.focus();
+                }
+            });
+
+            // --- Initial Welcome ---
+            const startTerminal = async () => {
+                await commands.motd();
+                await typeLine("Type 'help' for a list of available commands.", 15);
+                await typeLine("");
+                commandInput.focus();
+            };
+
+            startTerminal();
+        });
+    </script>
 </body>
 </html>
