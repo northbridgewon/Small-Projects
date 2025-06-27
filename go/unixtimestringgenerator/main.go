@@ -2,12 +2,12 @@
 package main
 
 import (
-	"fmt"      // For formatted I/O, like printing to the console
-	"os"       // For interacting with the operating system, like handling signals
+	"fmt"       // For formatted I/O, like printing to the console
+	"os"        // For interacting with the operating system, like handling signals
 	"os/signal" // For specific signal handling capabilities
-	"strconv"  // For string conversions, like int to string in different bases
-	"syscall"  // Contains OS-level system calls, like signal types
-	"time"     // For time-related functions
+	"strconv"   // For string conversions, like int to string in different bases
+	"syscall"   // Contains OS-level system calls, like signal types
+	"time"      // For time-related functions
 )
 
 // stringGeneratorFunction is a type alias for functions that take a Unix timestamp (int64)

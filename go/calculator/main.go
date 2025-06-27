@@ -1,49 +1,40 @@
 package main
+
 import (
-	"fmt"      // For formatted I/O, like printing to the console
-	"os"       // For interacting with the operating system, like handling signals
-	"bufio"   // For buffered I/O, like reading from the console
+	"bufio" // For buffered I/O, like reading from the console
+	"fmt"   // For formatted I/O, like printing to the console
+	"os"    // For interacting with the operating system, like handling signals
 )
-
-
-
-
-
-
-
-
-
 
 func additinon(a, b int) int {
 	// This function takes two integers and returns their sum.
 	// It is a simple addition function.
-		return a + b
-	}
+	return a + b
+}
 
 func subtract(a, b int) int {
 	// This function takes two integers and returns their difference.
 	// It is a simple subtraction function.
-		return a - b
-	}
+	return a - b
+}
 
 func multiply(a, b int) int {
 	// This function takes two integers and returns their product.
 	// It is a simple multiplication function.
-		return a * b
-	}	
+	return a * b
+}
 
 func divide(a, b int) int {
 	// This function takes two integers and returns their quotient.
 	// It is a simple division function.
-		if b == 0 {
-			fmt.Println("Error: Division by zero")
-			return 0
-		}
-		return a / b
+	if b == 0 {
+		fmt.Println("Error: Division by zero")
+		return 0
 	}
+	return a / b
+}
 
-
-func main(){
+func main() {
 
 	// This is the main function where the program starts executing.
 	// It will prompt the user for two numbers and an operator, then perform the calculation.
@@ -65,7 +56,7 @@ func main(){
 
 	// Prompt the user for an operator.
 	fmt.Print("Enter operator (+, -, *, /): ")
-	scanner.Scan() // Read the input
+	scanner.Scan()             // Read the input
 	operator := scanner.Text() // Get the operator as a string
 
 	// Perform the calculation based on the operator.
@@ -81,8 +72,8 @@ func main(){
 		fmt.Printf("Result: %d\n", result)
 	case "/":
 		result := divide(num1, num2)
-		fmt.Printf("Result: %d\n", result)	
-	
+		fmt.Printf("Result: %d\n", result)
+
 	default:
 		fmt.Println("Invalid operator")
 	}
