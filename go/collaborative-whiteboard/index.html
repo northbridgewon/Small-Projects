@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Collaborative Whiteboard</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f0f0f0; }
+        canvas { border: 1px solid #ccc; background-color: #fff; }
+    </style>
+</head>
+<body>
+    <canvas id="whiteboard"></canvas>
+
+    <script>
+        const canvas = document.getElementById('whiteboard');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size to fill window
+        canvas.width = window.innerWidth - 20;
+        canvas.height = window.innerHeight - 20;
+
+        const ws = new WebSocket("ws://localhost:8000/ws");
+
+        ws.onopen = () => {
+            console.log("Connected to WebSocket server");
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            // For now, just log. Later, draw on canvas.
+            console.log("Received:", data);
+            if (data.type === 'draw') {
+                drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.lineWidth);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log("Disconnected from WebSocket server");
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function drawLine(x0, y0, x1, y1, color, lineWidth) {
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x1, y1);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            
+            const data = {
+                type: 'draw',
+                x0: lastX,
+                y0: lastY,
+                x1: e.offsetX,
+                y1: e.offsetY,
+                color: '#000000', // Black color for now
+                lineWidth: 5
+            };
+            ws.send(JSON.stringify(data));
+            drawLine(lastX, lastY, e.offsetX, e.offsetY, data.color, data.lineWidth);
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+
+    </script>
+</body>
+</html>
