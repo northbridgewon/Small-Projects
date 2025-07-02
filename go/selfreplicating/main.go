@@ -1,4 +1,4 @@
-package selfreplicating
+package main
 
 import (
 	"fmt"
